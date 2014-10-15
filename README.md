@@ -1,6 +1,6 @@
 # reactive-property
 
-> Define reactive properties in your objects
+> Define reactive properties in your JavaScript objects
 
 ## Usage
 
