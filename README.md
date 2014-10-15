@@ -9,7 +9,9 @@ var person = {
     //define property, with default value,
     //additionally you can pass validation test function
     //as second argument, but that's optional.
-    name: reactiveProperty("John")
+    name: reactiveProperty("John", function(value){
+        return value !== "";
+    })
 }
 
 //read property
@@ -32,3 +34,7 @@ person.name(); //>>>"Ivan"
 
 alias(); //>>>"Ivan"
 ```
+
+## Dependency
+
+Reactive property uses [Events library](https://github.com/narushevich/events) for firing "change" event.
