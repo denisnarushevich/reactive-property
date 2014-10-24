@@ -63,7 +63,7 @@
      * @param {*} [newVal]
      * @returns {Prop}
      */
-    Prop.prototype.accessor = function (newVal) {
+    Prop.prototype.accessor = function (newVal, quiet) {
         var val = this._val;
         var validator = this._validator;
 
@@ -79,7 +79,8 @@
         unsubscribe(this);
         nestedSubscribe(this);
 
-        fire(this);
+        if(quiet === undefined || !quiet)
+            fire(this);
 
         return this._facade;
     };
