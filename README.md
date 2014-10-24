@@ -18,7 +18,7 @@ var person = {
 person.name(); //>>>"John"
 
 //subscribe to property change
-person.name.onChange(function(property, args){
+person.name.on(function(property, args){
     console.log("Now name is "+args.newValue);
 });
 
@@ -33,6 +33,26 @@ var alias = person.name;
 person.name(); //>>>"Ivan"
 
 alias(); //>>>"Ivan"
+```
+
+## Nested properties
+Property nesting is also supported. Reactive property will listen to direct child reactive properties, arrays of properties and dictionaries.
+You can aggregate multiple properties into one.
+```js
+var a = reactiveProperty(1);
+var b = reactiveProperty(a); //will listen to a
+var c = reactiveProperty([a,b]); //will listen to a & b
+var d = reactiveProperty({a:a,c:c}); //will listen to a & c
+
+b.on(function(){
+    console.log("B update!");
+});
+
+c.on(function(){
+    console.log("C update!");
+});
+
+a(3); >>> "B update!", "C update!";
 ```
 
 ## Dependency
