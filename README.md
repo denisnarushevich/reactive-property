@@ -19,7 +19,7 @@ person.name(); //>>>"John"
 
 //subscribe to property change
 person.name.on(function(property, args){
-    console.log("Now name is "+args.newValue);
+    console.log("Name changed from "+args.old()+" to "+args());
 });
 
 //set value
@@ -28,7 +28,7 @@ person.name("Ivan");
 //reactive properties are being passed by reference
 var alias = person.name;
 
-//>>>"Now name is Ivan"
+//>>>"Name changed from John to Ivan"
 
 person.name(); //>>>"Ivan"
 

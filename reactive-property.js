@@ -1,87 +1,124 @@
 (function (global, Events) {
-    function unsubscribe(subs) {
-        for(var i in subs){
+    function unsubscribe(prop) {
+        var subs = prop._subs;
+        for (var i in subs) {
             Events.off(subs[i]);
         }
         subs.length = 0;
     }
 
-    function fire(from, to, p) {
-        Events.fire(p, "change", {
-            from: from,
-            to: to
-        });
+    function fire(prop) {
+        Events.fire(prop, events.change, prop._facade);
     }
 
-    function nestedSubscribe(val, subs, oldVal, val, p) {
+    function nestedSubscribe(prop) {
+        var val = prop._val;
+
         if (typeof val === "object" || Array.isArray(val))
             for (var i in val)
-                trySubscribe(val[i], subs, oldVal, val, p);
-        else trySubscribe(val, subs, oldVal, val, p);
+                trySubscribe(prop, val[i]);
+        else trySubscribe(prop, val);
     }
 
-    function trySubscribe(prop, subs, oldVal, val, p) {
-        if (typeof prop === "function" && prop.toString() === p.toString()) {
-            subs.push(prop.on(function () {
-                fire(oldVal, val, p);
+    function trySubscribe(prop, val) {
+        if (typeof val === "function" && typeof val._isReactiveProperty !== "undefined") {
+            prop._subs.push(val.on(function () {
+                fire(prop);
             }));
         }
     }
 
+    var events = {
+        change: "change"
+    };
+
+    /**
+     * @param {*} defaultValue
+     * @param {function:bool} [validator]
+     * @returns {function(this:Prop)}
+     * @constructor
+     */
+    function Prop(defaultValue, validator) {
+        this._validator = validator || null;
+        this._subs = [];
+        this.accessor(defaultValue);
+
+        this._facade = Prop.prototype.accessor.bind(this);
+        this._facade.on = Prop.prototype.on.bind(this);
+        this._facade.off = Prop.prototype.off.bind(this);
+        this._facade.old = Prop.prototype.old.bind(this);
+        this._facade._isReactiveProperty = true;
+
+        return this._facade;
+    }
+
+    Prop.events = events;
+
+    Prop.prototype._validator = null;
+    Prop.prototype._subs = null;
+    Prop.prototype._val = undefined;
+    Prop.prototype._oldVal = undefined;
+
+    /**
+     * @param {*} [newVal]
+     * @returns {Prop}
+     */
+    Prop.prototype.accessor = function (newVal) {
+        var val = this._val;
+        var validator = this._validator;
+
+        if (newVal === undefined)
+            return val;
+
+        if (validator !== null && !validator(newVal) || val === newVal)
+            return this._facade;
+
+        this._oldVal = val;
+        this._val = newVal;
+
+        unsubscribe(this);
+        nestedSubscribe(this);
+
+        fire(this);
+
+        return this._facade;
+    };
+
+    Prop.prototype.old = function(){
+        return this._oldVal;
+    };
+
+    /**
+     * Subscribe to property change
+     * @param {function} listener
+     * @param {boolean} immediate Call listener immediately after subscription
+     * @param {*} data Will be passed to listener
+     * @returns {int}
+     */
+    Prop.prototype.on = function (listener, immediate, data) {
+        var sub = Events.on(this, events.change, listener, data);
+
+        if (immediate === true)
+            listener(this, this._facade, data);
+
+        return sub;
+    };
+
+    /**
+     * Unsubscribe from property
+     * @param {function|int} listenerOrSubscription Listener or subscription id
+     */
+    Prop.prototype.off = function (listenerOrSubscription) {
+        return Events.off(this, events.change, listenerOrSubscription);
+    };
+
+    /**
+     * @param {*} defaultValue
+     * @param {function:boolean} validation
+     * @returns {Prop}
+     */
     function reactiveProperty(defaultValue, validation) {
-        var oldVal = null;
-        var val = undefined;
-        var subs = [];
-
-        property(defaultValue);
-
-        /**
-         * Read or write property
-         * @param {*} [newValue]
-         * @returns {*}
-         */
-        function property(newVal) {
-            if (newVal === undefined)
-                return val;
-
-            if (validation !== undefined && !validation(newVal) || val === newVal)
-                return property;
-
-            oldVal = val;
-            val = newVal;
-
-            unsubscribe(subs);
-            nestedSubscribe(val, subs, oldVal, newVal, property);
-
-            fire(oldVal, newVal, property);
-
-            return property;
-        }
-
-        /**
-         * Subscribe to property's change
-         * @param {function} listener
-         * @param {boolean} immediate Fire immediately after subscription
-         * @returns {int} Subscription id
-         */
-        property.on = function (listener, immediate) {
-            var sub = Events.on(property, "change", listener, property);
-
-            if (immediate === true)
-                fire();
-
-            return sub;
-        };
-
-        /**
-         * Unsubscribe from property
-         * @param {function|int} listenerOrSubscription Subscription id or listener
-         */
-        property.off = function (listenerOrSubscription) {
-            Events.off(property, "change", listenerOrSubscription);
-        };
-
-        return property;
+        return new Prop(defaultValue, validation);
     }
 
     return this.reactiveProperty = reactiveProperty;
