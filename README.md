@@ -35,14 +35,13 @@ person.name(); //>>>"Ivan"
 alias(); //>>>"Ivan"
 ```
 
-## Nested properties
-Property nesting is also supported. Reactive property will listen to direct child reactive properties, arrays of properties and dictionaries.
-You can aggregate multiple properties into one.
+## Aggregate properties
+Property aggregating is also supported. Means you can aggregate multiple properties into one.
+Reactive property will listen to direct child reactive properties and arrays of properties.
 ```js
 var a = reactiveProperty(1);
 var b = reactiveProperty(a); //will listen to a
-var c = reactiveProperty([a,b]); //will listen to a & b
-var d = reactiveProperty({a:a,c:c}); //will listen to a & c
+var c = reactiveProperty([a,b]); //will listen to a & b and fire change when a or b changes.
 
 b.on(function(){
     console.log("B update!");
@@ -57,4 +56,4 @@ a(3); >>> "B update!", "C update!";
 
 ## Dependency
 
-Reactive property uses [Events library](https://github.com/narushevich/events) for firing "change" event.
+Reactive property uses [Events library](https://github.com/narushevich/events).

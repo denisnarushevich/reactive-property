@@ -1,8 +1,10 @@
 (function (global, Events) {
     function unsubscribe(prop) {
-        var subs = prop._subs;
+        var subs = prop._subs,
+            sub;
         for (var i in subs) {
-            Events.off(subs[i]);
+            sub = subs[i];
+            Events.off(sub.target, events.change, sub.token);
         }
         subs.length = 0;
     }
@@ -14,7 +16,7 @@
     function nestedSubscribe(prop) {
         var val = prop._val;
 
-        if (typeof val === "object" || Array.isArray(val))
+        if (Array.isArray(val))
             for (var i in val)
                 trySubscribe(prop, val[i]);
         else trySubscribe(prop, val);
@@ -79,13 +81,13 @@
         unsubscribe(this);
         nestedSubscribe(this);
 
-        if(quiet === undefined || !quiet)
+        if (quiet === undefined || !quiet)
             fire(this);
 
         return this._facade;
     };
 
-    Prop.prototype.old = function(){
+    Prop.prototype.old = function () {
         return this._oldVal;
     };
 
