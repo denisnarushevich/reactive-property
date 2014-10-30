@@ -18,21 +18,14 @@ var person = {
 person.name(); //>>>"John"
 
 //subscribe to property change
-person.name.change(function(property, args){
+person.name.onChange(function(property, args){
     console.log("Name changed from "+args.old()+" to "+args());
 });
 
 //set value
-person.name("Ivan");
-
-//reactive properties are being passed by reference
-var alias = person.name;
-
-//>>>"Name changed from John to Ivan"
+person.name("Ivan"); //>>>"Name changed from John to Ivan"
 
 person.name(); //>>>"Ivan"
-
-alias(); //>>>"Ivan"
 ```
 
 ## Aggregate properties
@@ -40,20 +33,12 @@ Property aggregating is also supported. Means you can aggregate multiple propert
 Reactive property will listen to direct child reactive properties and arrays of properties.
 ```js
 var a = reactiveProperty(1);
-var b = reactiveProperty(a); //will listen to a
-var c = reactiveProperty([a,b]); //will listen to a & b and fire change when a or b changes.
+var b = reactiveProperty(2);
+var ab = reactiveProperty([a,b]); //will listen to a & b and fire change when a or b changes.
 
-b.change(function(){
-    console.log("B update!");
+ab.onChange(function(){
+    console.log("A or B update!");
 });
 
-c.change(function(){
-    console.log("C update!");
-});
-
-a(3); >>> "B update!", "C update!";
+a(3);// >>> "A or B updated!";
 ```
-
-## Dependency
-
-Reactive property uses [Events library](https://github.com/narushevich/events).
