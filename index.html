@@ -14,12 +14,12 @@
     var c = reactiveProperty("c");
     var abc = reactiveProperty([a,b,c]);
 
-    a.change(function(){
+    a.onChange(function(){
         console.log("a", arguments);
         test++;
     });
 
-    abc.change(function(){
+    abc.onChange(function(){
         console.log("abc", arguments);
         test++;
     });

@@ -20,8 +20,8 @@ function nestedSubscribe(prop, caller) {
 }
 
 function trySubscribe(prop, val, caller) {
-    if (typeof val === "function" && typeof val.change !== "undefined") {
-        prop._subs.push(val.change(function () {
+    if (typeof val === "function" && typeof val.onChange !== "undefined") {
+        prop._subs.push(val.onChange(function () {
             prop.change(caller, caller());
         }));
     }
