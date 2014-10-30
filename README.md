@@ -18,7 +18,7 @@ var person = {
 person.name(); //>>>"John"
 
 //subscribe to property change
-person.name.on(function(property, args){
+person.name.change(function(property, args){
     console.log("Name changed from "+args.old()+" to "+args());
 });
 
@@ -43,11 +43,11 @@ var a = reactiveProperty(1);
 var b = reactiveProperty(a); //will listen to a
 var c = reactiveProperty([a,b]); //will listen to a & b and fire change when a or b changes.
 
-b.on(function(){
+b.change(function(){
     console.log("B update!");
 });
 
-c.on(function(){
+c.change(function(){
     console.log("C update!");
 });
 

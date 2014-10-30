@@ -1,0 +1,25 @@
+{
+  "name": "reactive-property",
+  "version": "1.0.0",
+  "description": "> Define reactive properties in your JavaScript objects",
+  "main": "reactive-property.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/narushevich/reactive-property.git"
+  },
+  "author": "Denis Narushevich",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/narushevich/reactive-property/issues"
+  },
+  "homepage": "https://github.com/narushevich/reactive-property",
+  "devDependencies": {
+    "browserify": "^6.2.0",
+    "browserify-shim": "^3.8.0",
+    "grunt": "^0.4.5",
+    "grunt-browserify": "^3.1.0",
+  }
+}
