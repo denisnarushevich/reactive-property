@@ -93,7 +93,7 @@ function reactiveProperty(defaultValue, validation) {
         return accessor(prop, facade, newVal, quiet);
     };
 
-    facade.change = function (a, b, c) {
+    facade.onChange = function (a, b, c) {
         return change(prop, facade, a, b, c);
     };
 
