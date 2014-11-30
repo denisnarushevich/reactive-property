@@ -1,44 +1,38 @@
 # reactive-property
 
-> Define reactive properties in your JavaScript objects
+> Define reactive properties in your JavaScript objects. Reactive properties notify when they change.
 
 ## Usage
 
 ```js
-var person = {
-    //define property, with default value,
-    //additionally you can pass validation test function
-    //as second argument, but that's optional.
-    name: reactiveProperty("John", function(value){
-        return value !== "";
-    })
+function Person(){
+
 }
 
-//read property
-person.name(); //>>>"John"
+//DEFINE:
+//You can define your property in prototype. You can also define it on the instance of object.
+//First parameter is default value, second - optional value validator
+MyClass.prototype.name = reactiveProperty("unnamed", function(value){
+    return typeof value === "string";
+}
+
+var person = new Person;
+
+//READ:
+person.name(); //>>>"unnamed"
+
+//WRITE:
+person.name("Ivan");
+
+//READ PREVIOUS VALUE:
+person.name(person.name.OLD); //>>>"Ivan"
 
 //subscribe to property change
-person.name.onChange(function(property, args){
-    console.log("Name changed from "+args.old()+" to "+args());
-});
+person.name(person.name.CHANGE, function(person, val, data){
+    console.log(data+val);
+}, "Name changed to ");
 
-//set value
-person.name("Ivan"); //>>>"Name changed from John to Ivan"
+person.name("John"); //>>>"Name changed to John"
 
-person.name(); //>>>"Ivan"
-```
-
-## Aggregate properties
-Property aggregating is also supported. Means you can aggregate multiple properties into one.
-Reactive property will listen to direct child reactive properties and arrays of properties.
-```js
-var a = reactiveProperty(1);
-var b = reactiveProperty(2);
-var ab = reactiveProperty([a,b]); //will listen to a & b and fire change when a or b changes.
-
-ab.onChange(function(){
-    console.log("A or B update!");
-});
-
-a(3);// >>> "A or B updated!";
+person.name(); //>>>"John"
 ```

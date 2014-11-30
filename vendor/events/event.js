@@ -1,12 +1,13 @@
 var Subscription = require("./subscription");
 
-function offByToken(e, token) {
+function offByToken(e, sub) {
+    var tkn = sub.token;
     var subs = e._subs;
     var subsArr = e._subsArr;
-    var idx = subsArr.indexOf(subs[token]);
+    var idx = subsArr.indexOf(sub);
     if (idx !== -1) {
         subsArr[idx] = undefined;
-        delete subs[token];
+        delete subs[tkn];
         return true;
     }
     return false;
@@ -46,7 +47,7 @@ function on(e, handler, data, once) {
     e._subsArr.push(s);
     e._subs[token] = s;
 
-    return token;
+    return s;
 }
 
 function once(e, handler, data) {
@@ -69,7 +70,7 @@ function fire(e, sender, args) {
         }
 
         if (sub.once)
-            offByToken(e, sub.token);
+            offByToken(e, sub);
 
         handler = sub.handler;
         handler(sender, args, sub.data);

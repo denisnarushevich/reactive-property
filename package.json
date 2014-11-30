@@ -1,6 +1,6 @@
 {
   "name": "reactive-property",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "> Define reactive properties in your JavaScript objects",
   "main": "reactive-property.js",
   "scripts": {

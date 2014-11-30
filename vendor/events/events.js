@@ -1,4 +1,5 @@
 var Event = require("./event");
+var Subscription = require("./subscription");
 
 /**
  * Retrieve Event object from host
@@ -86,14 +87,19 @@ function _fire(host, event, sender, args){
     fire(host._events[event], sender, args);
 }
 
-function callableEvent(name) {
-    function ev(sender, args) {
-        if(sender === undefined && args === undefined) {
-            return event(this, name);
-        }else
-            return _fire(this, name, sender, args);
-    }
 
+function callableEvent(name) {
+    function ev(a, b) {
+        if(a === undefined && b === undefined) {
+            return event(this, name);
+        }else if(a instanceof Subscription){
+            return off(this, name, a);
+        }else if(typeof a === "function"){
+            return on(this, name, a, b);
+        }else {
+            return _fire(this, name, a, b);
+        }
+    }
     return ev;
 }
 
@@ -104,6 +110,7 @@ function Events(){
     this.fire = fire;
     this.event = callableEvent;
     this.Event = Event;
+    this.Subscription = Subscription;
 }
 
 module.exports = new Events();

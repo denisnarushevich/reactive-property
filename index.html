@@ -7,26 +7,97 @@
 </head>
 <body>
 <script>
-    var test = 0;
+    var count = 0;
+    var test = true;
+    var t;
 
-    var a = reactiveProperty("a");
-    var b = reactiveProperty("b");
-    var c = reactiveProperty("c");
-    var abc = reactiveProperty([a,b,c]);
+    function f() {
+        count++;
+    }
 
-    a.onChange(function(){
-        console.log("a", arguments);
-        test++;
-    });
+    function Klass() {
 
-    abc.onChange(function(){
-        console.log("abc", arguments);
-        test++;
-    });
+    }
 
-    a("9");
+    Klass.prototype.a = reactiveProperty(1);
+    Klass.prototype.b = reactiveProperty(2);
 
-    console.log("TEST:",test == 2 ? "OK" : "FAIL");
+    var a = new Klass();
+
+    console.log("read");
+    t = a.a();
+    test &= t == 1;
+    console.log(!!test, count == 0);
+
+    console.log("set 0");
+    t = a.a(0);
+    test &= t == true;
+    console.log(!!test, count == 0);
+
+    console.log("read");
+    t = a.a();
+    test &= t == 0;
+    console.log(!!test, count == 0);
+
+    console.log("observer 1, immedate true");
+
+    var s0 = a.a(a.a.CHANGE, f, true, "data");
+    test &= s0 !== undefined;
+    test &= count == 1;
+    count = 0;
+    console.log(!!test, count == 0);
+
+    console.log("observer 2, immedate false");
+
+    var s1 = a.a(a.a.CHANGE, f, false, "data");
+    test &= s1 !== undefined;
+    test &= count == 0;
+    count = 0;
+    console.log(!!test, count == 0);
+
+    console.log("set 9");
+    t = a.a(9);
+    test &= t == true;
+    test &= count == 2;
+    count = 0;
+    console.log(!!test, count == 0);
+
+    console.log("unobserve 1");
+    t = a.a(a.a.CHANGE, s0);
+    test &= t == true;
+    console.log(!!test, count == 0);
+
+    console.log("set 8");
+    t = a.a(8);
+    test &= t == true;
+    test &= count == 1;
+    count = 0;
+    console.log(!!test, count == 0);
+
+    console.log("set 8");
+    t = a.a(8);
+    test &= t == false;
+    console.log(!!test, count == 0);
+
+    console.log("unobserve 2");
+    t = a.a(a.a.CHANGE, s1);
+    test &= t == true;
+    console.log(!!test, count == 0);
+
+    console.log("set 7");
+    t = a.a(7);
+    test &= t == true;
+    console.log(!!test, count == 0);
+
+    console.log("read");
+    t = a.a();
+    test &= t == 7;
+    console.log(!!test, count == 0);
+
+
+    test &= count == 0;
+
+    console.log("TEST", test ? "OK" : "FAIL");
 </script>
 </body>
 </html>

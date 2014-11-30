@@ -1,122 +1,110 @@
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.reactiveProperty=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var Events = require("../vendor/events/events.js");
+var Events = require("../vendor/events/events");
 
-function unsubscribe(prop) {
-    var subs = prop._subs,
-        sub;
-    for (var i in subs) {
-        sub = subs[i];
-        prop.change().off(sub.token);
+function Property(host, defaultValue, validator){
+    this._host = host;
+
+    if(validator !== undefined)
+        this._validator = validator;
+
+    this.set(defaultValue);
+}
+
+Property.prototype._old = undefined;
+Property.prototype._val = undefined;
+
+Property.prototype._validator = undefined;
+
+Property.prototype._change = Events.event("change");
+
+Property.prototype.get = function(){
+    return this._val;
+};
+
+Property.prototype.set = function(val){
+    if((this._validator === undefined || this._validator(val)) && val !== this._val){
+        this._old = this._val;
+        this._val = val;
+        this._change(this._host, val);
+        return true;
     }
-    subs.length = 0;
-}
+    return false;
+};
 
-function nestedSubscribe(prop, caller) {
-    var val = prop._val;
+Property.prototype.old = function(){
+    return this._old;
+};
 
-    if (Array.isArray(val))
-        for (var i in val)
-            trySubscribe(prop, val[i], caller);
-    else trySubscribe(prop, val, caller);
-}
+Property.prototype.on = function(listener, immediate, data){
+    var s = this._change(listener, data);
 
-function trySubscribe(prop, val, caller) {
-    if (typeof val === "function" && typeof val.onChange !== "undefined") {
-        prop._subs.push(val.onChange(function () {
-            prop.change(caller, caller());
-        }));
+    if(immediate)
+        listener(this._host, this._val, data);
+
+    return s;
+};
+
+Property.prototype.off = function(subscription){
+    return this._change(subscription);
+};
+
+module.exports = Property;
+},{"../vendor/events/events":4}],2:[function(require,module,exports){
+var ReactiveProperty = require("./ReactiveProperty");
+var Events = require("../vendor/events/events");
+
+var OLD = {};
+var CHANGE = {};
+
+function determineKey(host, accessor) {
+    for (var key in host) {
+        if (host[key] === accessor)
+            return key;
     }
 }
 
-function accessor(prop, caller, newVal, quiet) {
-    var val = prop._val;
-    var validator = prop._validator;
+module.exports = function (defaultValue, validator) {
+    function reactiveProperty(a, b, c, d) {
+        var host = this;
 
-    if (newVal === undefined)
-        return val;
+        var key = "__" + determineKey(host, reactiveProperty);
 
-    if (validator !== null && !validator(newVal) || val === newVal)
-        return caller;
+        var prop = host[key];
 
-    prop._oldVal = val;
-    prop._val = newVal;
+        if (prop === undefined)
+            prop = host[key] = new ReactiveProperty(host, defaultValue, validator);
 
-    unsubscribe(prop);
-    nestedSubscribe(prop, caller);
+        if (arguments.length === 0) {
+            return prop.get();
+        } else if (a === CHANGE) {
+            if (b instanceof Events.Subscription) {
+                return prop.off(b);
+            } else {
+                return prop.on(b, c, d);
+            }
+        } else if (a === OLD) {
+            return prop.old();
+        } else {
+            return prop.set(a);
+        }
+    }
 
-    if (quiet === undefined || !quiet)
-        prop.change(caller, newVal);
+    reactiveProperty.OLD = OLD;
+    reactiveProperty.CHANGE = CHANGE;
 
-    return caller;
-}
-
-function on(prop, caller, listener, immediate, data) {
-    var sub = prop.change().on(listener, data);
-
-    if (immediate === true)
-        listener(caller, caller(), data);
-
-    return sub;
-}
-
-function off(prop, listenerOrSubscription) {
-    return prop.change().off(listenerOrSubscription);
-}
-
-function change(prop, caller, a, b, c) {
-    if (typeof a === "function")
-        return on(prop, caller, a, b, c);
-    else
-        return off(prop, a);
-}
-
-function Prop(validator) {
-    this.change = Events.event("change");
-    this._validator = validator || null;
-    this._subs = [];
-}
-
-Prop.prototype._validator = null;
-Prop.prototype._subs = null;
-Prop.prototype._val = undefined;
-Prop.prototype._oldVal = undefined;
-
-/**
- * @param {*} [defaultValue]
- * @param {function:boolean} [validation]
- * @returns {function} Accessor
- */
-function reactiveProperty(defaultValue, validation) {
-    var prop = new Prop(validation),
-        facade;
-
-    facade = function (newVal, quiet) {
-        return accessor(prop, facade, newVal, quiet);
-    };
-
-    facade.onChange = function (a, b, c) {
-        return change(prop, facade, a, b, c);
-    };
-
-    facade.old = function () {
-        return prop._oldVal;
-    };
-
-    accessor(prop, facade, defaultValue, true);
-
-    return facade;
-}
-module.exports = reactiveProperty;
-},{"../vendor/events/events.js":3}],2:[function(require,module,exports){
+    return reactiveProperty;
+};
+},{"../vendor/events/events":4,"./ReactiveProperty":1}],3:[function(require,module,exports){
 var Subscription = require("./subscription");
 
-function offByToken(e, token) {
+function offByToken(e, sub) {
+    var tkn = sub.token;
     var subs = e._subs;
     var subsArr = e._subsArr;
-    var idx = subsArr.indexOf(subs[token]);
+    var idx = subsArr.indexOf(sub);
     if (idx !== -1) {
         subsArr[idx] = undefined;
-        delete subs[token];
+        delete subs[tkn];
         return true;
     }
     return false;
@@ -156,7 +144,7 @@ function on(e, handler, data, once) {
     e._subsArr.push(s);
     e._subs[token] = s;
 
-    return token;
+    return s;
 }
 
 function once(e, handler, data) {
@@ -179,7 +167,7 @@ function fire(e, sender, args) {
         }
 
         if (sub.once)
-            offByToken(e, sub.token);
+            offByToken(e, sub);
 
         handler = sub.handler;
         handler(sender, args, sub.data);
@@ -223,8 +211,9 @@ Event.prototype.fire = function (sender, args) {
 };
 
 module.exports = Event;
-},{"./subscription":4}],3:[function(require,module,exports){
+},{"./subscription":5}],4:[function(require,module,exports){
 var Event = require("./event");
+var Subscription = require("./subscription");
 
 /**
  * Retrieve Event object from host
@@ -312,14 +301,19 @@ function _fire(host, event, sender, args){
     fire(host._events[event], sender, args);
 }
 
-function callableEvent(name) {
-    function ev(sender, args) {
-        if(sender === undefined && args === undefined) {
-            return event(this, name);
-        }else
-            return _fire(this, name, sender, args);
-    }
 
+function callableEvent(name) {
+    function ev(a, b) {
+        if(a === undefined && b === undefined) {
+            return event(this, name);
+        }else if(a instanceof Subscription){
+            return off(this, name, a);
+        }else if(typeof a === "function"){
+            return on(this, name, a, b);
+        }else {
+            return _fire(this, name, a, b);
+        }
+    }
     return ev;
 }
 
@@ -330,12 +324,13 @@ function Events(){
     this.fire = fire;
     this.event = callableEvent;
     this.Event = Event;
+    this.Subscription = Subscription;
 }
 
 module.exports = new Events();
 
 
-},{"./event":2}],4:[function(require,module,exports){
+},{"./event":3,"./subscription":5}],5:[function(require,module,exports){
 function Subscription(token, handler, data, once){
     this.handler = handler;
     this.data = data;
@@ -349,5 +344,5 @@ Subscription.prototype.data = null;
 Subscription.prototype.once = null;
 
 module.exports = Subscription;
-},{}]},{},[1])(1)
+},{}]},{},[2])(2)
 });

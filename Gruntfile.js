@@ -2,7 +2,7 @@ module.exports = function (grunt) {
     grunt.initConfig({
         browserify: {
             dist: {
-                src: ['src/reactive-property.js'],
+                src: ['src/main.js'],
                 dest: 'dist/reactive-property.js',
                 options: {
                     browserifyOptions: {
