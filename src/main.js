@@ -4,24 +4,10 @@ var Events = require("../vendor/events/events");
 var OLD = {};
 var CHANGE = {};
 
-function determineKey(host, accessor) {
-    for (var key in host) {
-        if (host[key] === accessor)
-            return key;
-    }
-}
+function Accessor(host, key, defaultValue, validator){
+    var prop = new ReactiveProperty(host, defaultValue, validator);
 
-module.exports = function (defaultValue, validator) {
-    function reactiveProperty(a, b, c, d) {
-        var host = this;
-
-        var key = "__" + determineKey(host, reactiveProperty);
-
-        var prop = host[key];
-
-        if (prop === undefined)
-            prop = host[key] = new ReactiveProperty(host, defaultValue, validator);
-
+    function accessor(a, b, c, d) {
         if (arguments.length === 0) {
             return prop.get();
         } else if (a === CHANGE) {
@@ -37,8 +23,32 @@ module.exports = function (defaultValue, validator) {
         }
     }
 
-    reactiveProperty.OLD = OLD;
-    reactiveProperty.CHANGE = CHANGE;
+    accessor.OLD = OLD;
+    accessor.CHANGE = CHANGE;
 
-    return reactiveProperty;
+    return accessor;
+}
+
+function determineKey(host, accessor) {
+    for (var key in host) {
+        if (host[key] === accessor)
+            return key;
+    }
+}
+
+module.exports = function (defaultValue, validator) {
+    function definitor() {
+        var host = this;
+        var key = determineKey(host, definitor);
+        var accessor = Accessor(host, key, defaultValue, validator);
+
+        host[key] = accessor;
+
+        return accessor.apply(host, arguments);
+    }
+
+    definitor.OLD = OLD;
+    definitor.CHANGE = CHANGE;
+
+    return definitor;
 };

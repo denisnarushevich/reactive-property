@@ -1,4 +1,59 @@
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.reactiveProperty=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var ReactiveProperty = require("./r");
+var Events = require("../vendor/events/events");
+
+var OLD = {};
+var CHANGE = {};
+
+function Accessor(host, key, defaultValue, validator){
+    var prop = new ReactiveProperty(host, defaultValue, validator);
+
+    function accessor(a, b, c, d) {
+        if (arguments.length === 0) {
+            return prop.get();
+        } else if (a === CHANGE) {
+            if (b instanceof Events.Subscription) {
+                return prop.off(b);
+            } else {
+                return prop.on(b, c, d);
+            }
+        } else if (a === OLD) {
+            return prop.old();
+        } else {
+            return prop.set(a);
+        }
+    }
+
+    accessor.OLD = OLD;
+    accessor.CHANGE = CHANGE;
+
+    return accessor;
+}
+
+function determineKey(host, accessor) {
+    for (var key in host) {
+        if (host[key] === accessor)
+            return key;
+    }
+}
+
+module.exports = function (defaultValue, validator) {
+    function definitor() {
+        var host = this;
+        var key = determineKey(host, definitor);
+        var accessor = Accessor(host, key, defaultValue, validator);
+
+        host[key] = accessor;
+
+        return accessor.apply(host, arguments);
+    }
+
+    definitor.OLD = OLD;
+    definitor.CHANGE = CHANGE;
+
+    return definitor;
+};
+},{"../vendor/events/events":4,"./r":2}],2:[function(require,module,exports){
 var Events = require("../vendor/events/events");
 
 function Property(host, defaultValue, validator) {
@@ -49,52 +104,7 @@ Property.prototype.off = function (subscription) {
 };
 
 module.exports = Property;
-},{"../vendor/events/events":4}],2:[function(require,module,exports){
-var ReactiveProperty = require("./ReactiveProperty");
-var Events = require("../vendor/events/events");
-
-var OLD = {};
-var CHANGE = {};
-
-function determineKey(host, accessor) {
-    for (var key in host) {
-        if (host[key] === accessor)
-            return key;
-    }
-}
-
-module.exports = function (defaultValue, validator) {
-    function reactiveProperty(a, b, c, d) {
-        var host = this;
-
-        var key = "__" + determineKey(host, reactiveProperty);
-
-        var prop = host[key];
-
-        if (prop === undefined)
-            prop = host[key] = new ReactiveProperty(host, defaultValue, validator);
-
-        if (arguments.length === 0) {
-            return prop.get();
-        } else if (a === CHANGE) {
-            if (b instanceof Events.Subscription) {
-                return prop.off(b);
-            } else {
-                return prop.on(b, c, d);
-            }
-        } else if (a === OLD) {
-            return prop.old();
-        } else {
-            return prop.set(a);
-        }
-    }
-
-    reactiveProperty.OLD = OLD;
-    reactiveProperty.CHANGE = CHANGE;
-
-    return reactiveProperty;
-};
-},{"../vendor/events/events":4,"./ReactiveProperty":1}],3:[function(require,module,exports){
+},{"../vendor/events/events":4}],3:[function(require,module,exports){
 var Subscription = require("./subscription");
 
 function offByToken(e, sub) {
@@ -301,18 +311,35 @@ function _fire(host, event, sender, args){
     fire(host._events[event], sender, args);
 }
 
+function determineName(host, callable){
+    for(var key in host)
+        if(host[key] === callable)
+            return key;
+}
 
-function callableEvent(name) {
-    function ev(a, b) {
-        if(a === undefined && b === undefined) {
-            return event(this, name);
-        }else if(a instanceof Subscription){
-            return off(this, name, a);
-        }else if(typeof a === "function"){
-            return on(this, name, a, b);
-        }else {
-            return _fire(this, name, a, b);
+function Accessor(host, name){
+    return function(a, b) {
+        if (a === undefined && b === undefined) {
+            return event(host, name);
+        } else if (a instanceof Subscription) {
+            return off(host, name, a);
+        } else if (typeof a === "function") {
+            return on(host, name, a, b);
+        } else {
+            return _fire(host, name, a, b);
         }
+    };
+}
+
+function eventAccessor() {
+    function ev(a,b) {
+        var name = determineName(this, ev);
+        var host = this;
+        var accessor = Accessor(host, name);
+
+        host[name] = accessor;
+
+        return accessor(a,b);
     }
     return ev;
 }
@@ -322,7 +349,7 @@ function Events(){
     this.once = once;
     this.off = off;
     this.fire = fire;
-    this.event = callableEvent;
+    this.event = eventAccessor;
     this.Event = Event;
     this.Subscription = Subscription;
 }
@@ -344,5 +371,5 @@ Subscription.prototype.data = null;
 Subscription.prototype.once = null;
 
 module.exports = Subscription;
-},{}]},{},[2])(2)
+},{}]},{},[1])(1)
 });

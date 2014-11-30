@@ -87,18 +87,35 @@ function _fire(host, event, sender, args){
     fire(host._events[event], sender, args);
 }
 
+function determineName(host, callable){
+    for(var key in host)
+        if(host[key] === callable)
+            return key;
+}
 
-function callableEvent(name) {
-    function ev(a, b) {
-        if(a === undefined && b === undefined) {
-            return event(this, name);
-        }else if(a instanceof Subscription){
-            return off(this, name, a);
-        }else if(typeof a === "function"){
-            return on(this, name, a, b);
-        }else {
-            return _fire(this, name, a, b);
+function Accessor(host, name){
+    return function(a, b) {
+        if (a === undefined && b === undefined) {
+            return event(host, name);
+        } else if (a instanceof Subscription) {
+            return off(host, name, a);
+        } else if (typeof a === "function") {
+            return on(host, name, a, b);
+        } else {
+            return _fire(host, name, a, b);
         }
+    };
+}
+
+function eventAccessor() {
+    function ev(a,b) {
+        var name = determineName(this, ev);
+        var host = this;
+        var accessor = Accessor(host, name);
+
+        host[name] = accessor;
+
+        return accessor(a,b);
     }
     return ev;
 }
@@ -108,7 +125,7 @@ function Events(){
     this.once = once;
     this.off = off;
     this.fire = fire;
-    this.event = callableEvent;
+    this.event = eventAccessor;
     this.Event = Event;
     this.Subscription = Subscription;
 }
