@@ -1,10 +1,10 @@
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.reactiveProperty=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var Events = require("../vendor/events/events");
 
-function Property(host, defaultValue, validator){
+function Property(host, defaultValue, validator) {
     this._host = host;
 
-    if(validator !== undefined)
+    if (validator !== undefined)
         this._validator = validator;
 
     this.set(defaultValue);
@@ -17,12 +17,12 @@ Property.prototype._validator = undefined;
 
 Property.prototype._change = Events.event("change");
 
-Property.prototype.get = function(){
+Property.prototype.get = function () {
     return this._val;
 };
 
-Property.prototype.set = function(val){
-    if((this._validator === undefined || this._validator(val)) && val !== this._val){
+Property.prototype.set = function (val) {
+    if ((this._validator === undefined || this._validator(val)) && val !== this._val) {
         this._old = this._val;
         this._val = val;
         this._change(this._host, val);
@@ -31,20 +31,20 @@ Property.prototype.set = function(val){
     return false;
 };
 
-Property.prototype.old = function(){
+Property.prototype.old = function () {
     return this._old;
 };
 
-Property.prototype.on = function(listener, immediate, data){
+Property.prototype.on = function (listener, immediate, data) {
     var s = this._change(listener, data);
 
-    if(immediate)
+    if (immediate)
         listener(this._host, this._val, data);
 
     return s;
 };
 
-Property.prototype.off = function(subscription){
+Property.prototype.off = function (subscription) {
     return this._change(subscription);
 };
 
