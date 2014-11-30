@@ -1,4 +1,4 @@
-var ReactiveProperty = require("./ReactiveProperty");
+var ReactiveProperty = require("./r");
 var Events = require("../vendor/events/events");
 
 var OLD = {};

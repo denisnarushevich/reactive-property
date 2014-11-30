@@ -25,7 +25,7 @@ person.name(); //>>>"unnamed"
 person.name("Ivan");
 
 //READ PREVIOUS VALUE:
-person.name(person.name.OLD); //>>>"Ivan"
+person.name(person.name.OLD); //>>>"unnamed"
 
 //subscribe to property change
 person.name(person.name.CHANGE, function(person, val, data){
