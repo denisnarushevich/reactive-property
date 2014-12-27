@@ -9,18 +9,14 @@ function determineKey(host, accessor) {
         if (host[key] === accessor)
             return key;
     }
+    throw "Couldn't determine name of reactive property";
 }
 
 function accessor(defaultValue, validator) {
     var name = undefined;
     function f(a,b,c,d) {
-        if (name === undefined) {
-            var key = determineKey(this, f);
-            if (key !== undefined)
-                name = accessor.prefix + key;
-            else
-                throw "Couldn't determine name of reactive property";
-        }
+        if (name === undefined)
+            name = accessor.prefix + determineKey(this, f);
 
         var prop = this[name];
 
