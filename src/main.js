@@ -11,13 +11,15 @@ function determineKey(host, accessor) {
     }
 }
 
-module.exports = function (defaultValue, validator) {
+function accessor(defaultValue, validator) {
     var name = undefined;
     function f(a,b,c,d) {
         if (name === undefined) {
             var key = determineKey(this, f);
             if (key !== undefined)
-                name = "__" + key;
+                name = accessor.prefix + key;
+            else
+                throw "Couldn't determine name of reactive property";
         }
 
         var prop = this[name];
@@ -44,4 +46,8 @@ module.exports = function (defaultValue, validator) {
     f.CHANGE = CHANGE;
 
     return f;
-};
+}
+
+accessor.prefix = "__";
+
+module.exports = accessor;
