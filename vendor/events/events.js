@@ -93,31 +93,23 @@ function determineName(host, callable){
             return key;
 }
 
-function Accessor(host, name){
-    return function(a, b) {
+function accessor(name) {
+    function f(a, b) {
+        if (name === undefined)
+            name = determineName(this, f);
+
         if (a === undefined && b === undefined) {
-            return event(host, name);
+            return event(this, name);
         } else if (a instanceof Subscription) {
-            return off(host, name, a);
+            return off(this, name, a);
         } else if (typeof a === "function") {
-            return on(host, name, a, b);
+            return on(this, name, a, b);
         } else {
-            return _fire(host, name, a, b);
+            return _fire(this, name, a, b);
         }
-    };
-}
-
-function eventAccessor() {
-    function ev(a,b) {
-        var name = determineName(this, ev);
-        var host = this;
-        var accessor = Accessor(host, name);
-
-        host[name] = accessor;
-
-        return accessor(a,b);
     }
-    return ev;
+
+    return f
 }
 
 function Events(){
@@ -125,7 +117,7 @@ function Events(){
     this.once = once;
     this.off = off;
     this.fire = fire;
-    this.event = eventAccessor;
+    this.event = accessor;
     this.Event = Event;
     this.Subscription = Subscription;
 }

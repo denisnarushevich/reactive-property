@@ -14,13 +14,16 @@ function determineKey(host, accessor) {
 module.exports = function (defaultValue, validator) {
     var name = undefined;
     function f(a,b,c,d) {
-        if(name === undefined)
-            name = determineKey(this, f);
+        if (name === undefined) {
+            var key = determineKey(this, f);
+            if (key !== undefined)
+                name = "__" + key;
+        }
 
-        var prop = this["_"+name];
+        var prop = this[name];
 
         if(prop === undefined)
-            prop = this["_"+name] = new ReactiveProperty(this, defaultValue, validator);
+            prop = this[name] = new ReactiveProperty(this, defaultValue, validator);
 
         if (arguments.length === 0) {
             return prop.get();
